@@ -133,20 +133,20 @@ def removeduppaths_ex(atpath, mustexist):
         if dircase not in known_paths:
             doadd = True
             if mustexist :
-               doadd = os.path.exists(dir)
+                doadd = os.path.exists(dir)
             if doadd:
-               L.append(dir)
-               known_paths.add(dircase)
+                L.append(dir)
+                known_paths.add(dircase)
 
     atpath[:] = L
     return known_paths
 # end removeduppath_ex()
 
 
-# compatibility for those, who use it outside site.py, works as before, may be deprecated 
+# compatibility for those, who use it outside site.py, works as before, may be deprecated
 def removeduppaths():
     """ Remove duplicate entries from sys.path along with making them absolute"""
-    return removeduppaths_ex(sys.path , False) # False: keep nonexistent in path      
+    return removeduppaths_ex(sys.path , False) # False: keep nonexistent in path
 
 
 def _init_pathinfo():
@@ -540,12 +540,12 @@ def exec_imp_module(modName) :
             # There is 'collection_mods' list there and subsequent AssertFailed()
             # is trying to ensure listed modules not loaded yet.
             # Attempt to use 'import importlib' cause listed module 'types' loaded.
-            # Same problem  it just try 'from importlib import import_module', 
-            # even without any other changes this file 
+            # Same problem  it just try 'from importlib import import_module',
+            # even without any other changes this file
             retmod = __import__( modName )
             usename = retmod.__file__
         except ImportError as exc:
-            if exc.name == modName : 
+            if exc.name == modName :
                 pass   # continue: no module found - no problem
             else:      # module found, but error in running
                 raise
@@ -604,24 +604,61 @@ if not sys.flags.no_site:
     main()
 
 def custsite_info(sname, usepath) :
-  if usepath :
-     print("%s ON: %s" % (sname , usepath) )
-  else :
-     print("%s OFF" % (sname) )
+    if usepath :
+        print("%s ON: %s" % (sname , usepath) )
+    else :
+        print("%s OFF" % (sname) )
 
 
 def envpath_info(vname) :
-  env = os.environ.copy()
-  strpath = env[vname]
-  if strpath == "" :
-     return
+    env = os.environ.copy()
+    strpath = env[vname]
+    if strpath == "" :
+        return
+    print("env[%s] = [" % vname)
+    for vdir in strpath.split(';') :
+        if vdir :
+            print("  %s" % (vdir))
+    print("]")
 
-  print("env[%s] = [" % vname)
-  for vdir in strpath.split(';') :
-    if vdir :
-      print("  %s" % (vdir))
 
-  print("]")
+def useful_info() :
+    global use_sitevendor, use_sitecustomize, use_usercustomize
+
+    print("sys.version:", sys.version ) 
+    print("sys._git:", sys._git ) 
+    print("sys.prefix:", sys.prefix) 
+    print("sys.base_prefix:", sys.base_prefix) 
+    print("sys.executable:", sys.executable) 
+    print("sys.path = [")
+    for dir in sys.path:
+        print("  %s" % (dir))
+    print("]")
+    envpath_info('PATH')
+
+    user_base = getuserbase()
+    user_site = getusersitepackages()
+    print("USER_BASE: %r (%s)" % (user_base,
+        "exists" if os.path.isdir(user_base) else "doesn't exist"))
+    print("USER_SITE: %r (%s)" % (user_site,
+        "exists" if os.path.isdir(user_site) else "doesn't exist"))
+    print("ENABLE_USER_SITE: %r" %  ENABLE_USER_SITE)
+
+    custsite_info("sitevendor" ,   use_sitevendor)
+    custsite_info("sitecustomize", use_sitecustomize)
+    custsite_info("usercustomize", use_usercustomize)
+
+    lng = len(sys._xoptions)
+    if (lng > 0) :
+        print("sys._xoptions = {") # name-value dictionary
+        for nm, val in sys._xoptions.items() :
+            print("  %s=%s" % (nm, val))
+        print("}")
+    else :
+        print("sys._xoptions is empty")
+
+    print("sys.warnoptions:", sys.warnoptions ) 
+# end useful_info
 
 
 def _script():
@@ -640,28 +677,9 @@ def _script():
      >2 - unknown error
     """
 
-    global use_sitevendor, use_sitecustomize, use_usercustomize
     args = sys.argv[1:]
     if not args:
-        print("sys.path = [")
-        for dir in sys.path:
-            print("  %s" % (dir))
-        print("]")
-
-        envpath_info('PATH')
-
-        user_base = getuserbase()
-        user_site = getusersitepackages()
-        print("USER_BASE: %r (%s)" % (user_base,
-            "exists" if os.path.isdir(user_base) else "doesn't exist"))
-        print("USER_SITE: %r (%s)" % (user_site,
-            "exists" if os.path.isdir(user_site) else "doesn't exist"))
-
-        print("ENABLE_USER_SITE: %r" %  ENABLE_USER_SITE)
-        custsite_info("sitevendor" ,   use_sitevendor)
-        custsite_info("sitecustomize", use_sitecustomize)
-        custsite_info("usercustomize", use_usercustomize)
-
+        useful_info()
         sys.exit(0)
 
     buffer = []
@@ -687,3 +705,5 @@ def _script():
 
 if __name__ == '__main__':
     _script()
+
+# eof site.py
